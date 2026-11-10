@@ -1,0 +1,13 @@
+node_modules/
+.n8n/
+*.sqlite
+*.db
+.env
+.env.*
+!.env.example
+output/*
+!output/.gitkeep
+!sample-output/
+.DS_Store
+npm-debug.log*
+package-lock.json

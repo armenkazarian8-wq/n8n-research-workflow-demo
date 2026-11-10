@@ -1,0 +1,16 @@
+{
+  "name": "n8n-research-workflow-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Demo n8n + Gemini research & content workflow with HTML dashboard",
+  "scripts": {
+    "pipeline": "node scripts/run-pipeline.js",
+    "dashboard": "npx --yes serve dashboard -l 8765",
+    "n8n": "echo \"Requires Node.js 18-22. Example: N8N_USER_FOLDER=./.n8n N8N_BLOCK_ENV_ACCESS_IN_NODE=false npx n8n@1.72.1\"",
+    "test": "node scripts/run-pipeline.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT"
+}

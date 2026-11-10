@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Research &amp; Content Workflow — Demo Dashboard</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1a2332;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #5b8def;
+      --accent2: #3ecf8e;
+      --warn: #f0b429;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 10% -10%, #1a2a44 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    header {
+      padding: 28px 24px 12px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 1.55rem;
+      letter-spacing: -0.02em;
+    }
+    header p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+    .badge {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: #243247;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+    .controls {
+      max-width: 1100px;
+      margin: 16px auto 0;
+      padding: 0 24px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+    label { font-size: 0.8rem; color: var(--muted); }
+    select, input[type="search"] {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      min-width: 160px;
+    }
+    input[type="search"] { flex: 1; min-width: 200px; }
+    .meta {
+      max-width: 1100px;
+      margin: 10px auto 0;
+      padding: 0 24px;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+    .grid {
+      max-width: 1100px;
+      margin: 16px auto 40px;
+      padding: 0 24px;
+      display: grid;
+      gap: 12px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 1.05rem;
+      line-height: 1.35;
+    }
+    .card h2 a { color: var(--text); text-decoration: none; }
+    .card h2 a:hover { color: var(--accent); }
+    .score {
+      flex-shrink: 0;
+      min-width: 48px;
+      height: 48px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      font-weight: 700;
+      background: #243247;
+      border: 1px solid var(--border);
+    }
+    .score.high { color: var(--accent2); border-color: #2f6b52; }
+    .score.mid { color: var(--warn); border-color: #6b5a2f; }
+    .score.low { color: var(--muted); }
+    .tags { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .tag {
+      font-size: 0.72rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #243247;
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .tag.cat { color: var(--accent); border-color: #35507a; }
+    .summary { margin: 10px 0 0; color: #c5d0e0; font-size: 0.92rem; line-height: 1.45; }
+    .points { margin: 10px 0 0; padding-left: 18px; color: var(--muted); font-size: 0.86rem; }
+    .points li { margin-bottom: 4px; }
+    .empty { text-align: center; color: var(--muted); padding: 40px 12px; }
+    footer {
+      max-width: 1100px;
+      margin: 0 auto 28px;
+      padding: 0 24px;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Research &amp; Content Workflow</h1>
+    <p>Demo dashboard for an n8n + Gemini research pipeline. Filter and sort structured AI outputs from public RSS sources.</p>
+    <span class="badge">Demo · fake client data not used · built to show the workflow pattern</span>
+  </header>
+
+  <div class="controls">
+    <div>
+      <label for="category">Category</label><br />
+      <select id="category"><option value="all">All</option></select>
+    </div>
+    <div>
+      <label for="sort">Sort</label><br />
+      <select id="sort">
+        <option value="score-desc">Score (high → low)</option>
+        <option value="score-asc">Score (low → high)</option>
+        <option value="title">Title (A → Z)</option>
+        <option value="source">Source</option>
+      </select>
+    </div>
+    <div style="flex:1">
+      <label for="q">Search</label><br />
+      <input id="q" type="search" placeholder="Search title, summary, source…" />
+    </div>
+  </div>
+  <div class="meta" id="meta">Loading…</div>
+  <div class="grid" id="grid"></div>
+  <footer>
+    Open this file after running the pipeline (<code>npm run pipeline</code>). Data is loaded from <code>dashboard/data.json</code>.
+  </footer>
+
+  <script>
+    let items = [];
+    let generatedAt = null;
+
+    function scoreClass(s) {
+      if (s >= 8) return 'high';
+      if (s >= 5) return 'mid';
+      return 'low';
+    }
+
+    function uniqueCategories(rows) {
+      return [...new Set(rows.map(r => r.category).filter(Boolean))].sort();
+    }
+
+    function applyFilters() {
+      const cat = document.getElementById('category').value;
+      const sort = document.getElementById('sort').value;
+      const q = document.getElementById('q').value.trim().toLowerCase();
+      let rows = items.slice();
+      if (cat !== 'all') rows = rows.filter(r => r.category === cat);
+      if (q) {
+        rows = rows.filter(r =>
+          [r.title, r.summary, r.source_name, ...(r.key_points || [])]
+            .join(' ')
+            .toLowerCase()
+            .includes(q)
+        );
+      }
+      rows.sort((a, b) => {
+        if (sort === 'score-desc') return b.relevance_score - a.relevance_score;
+        if (sort === 'score-asc') return a.relevance_score - b.relevance_score;
+        if (sort === 'title') return a.title.localeCompare(b.title);
+        if (sort === 'source') return a.source_name.localeCompare(b.source_name);
+        return 0;
+      });
+      render(rows);
+    }
+
+    function render(rows) {
+      const grid = document.getElementById('grid');
+      const meta = document.getElementById('meta');
+      meta.textContent = `${rows.length} of ${items.length} items` +
+        (generatedAt ? ` · generated ${new Date(generatedAt).toLocaleString()}` : '');
+      if (!rows.length) {
+        grid.innerHTML = '<div class="empty">No items match these filters.</div>';
+        return;
+      }
+      grid.innerHTML = rows.map(r => `
+        <article class="card">
+          <div class="card-top">
+            <div>
+              <h2><a href="${r.url}" target="_blank" rel="noopener">${escapeHtml(r.title)}</a></h2>
+              <div class="tags">
+                <span class="tag cat">${escapeHtml(r.category || 'Other')}</span>
+                <span class="tag">${escapeHtml(r.source_name || '')}</span>
+              </div>
+            </div>
+            <div class="score ${scoreClass(r.relevance_score)}" title="Relevance score">${r.relevance_score}</div>
+          </div>
+          <p class="summary">${escapeHtml(r.summary || '')}</p>
+          ${Array.isArray(r.key_points) && r.key_points.length
+            ? `<ul class="points">${r.key_points.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`
+            : ''}
+        </article>
+      `).join('');
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    fetch('./data.json')
+      .then(r => {
+        if (!r.ok) throw new Error('Missing data.json — run npm run pipeline first');
+        return r.json();
+      })
+      .then(data => {
+        items = data.items || [];
+        generatedAt = data.generated_at;
+        const sel = document.getElementById('category');
+        for (const c of uniqueCategories(items)) {
+          const opt = document.createElement('option');
+          opt.value = c;
+          opt.textContent = c;
+          sel.appendChild(opt);
+        }
+        document.getElementById('category').addEventListener('change', applyFilters);
+        document.getElementById('sort').addEventListener('change', applyFilters);
+        document.getElementById('q').addEventListener('input', applyFilters);
+        applyFilters();
+      })
+      .catch(err => {
+        document.getElementById('meta').textContent = err.message;
+        document.getElementById('grid').innerHTML =
+          '<div class="empty">No data yet. Run <code>npm run pipeline</code> then refresh.</div>';
+      });
+  </script>
+</body>
+</html>
