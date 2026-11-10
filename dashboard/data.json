@@ -1,93 +1,63 @@
 {
-  "generated_at": "2026-11-10T01:10:31.904Z",
+  "generated_at": "2026-11-10T01:17:40.612Z",
   "workflow": "research-content-workflow-demo",
+  "executed_in": "n8n",
   "model": "gemini-3.5-flash",
-  "item_count": 5,
+  "item_count": 3,
   "items": [
     {
-      "source_id": "hn",
-      "source_name": "Hacker News (Front Page)",
       "title": "Fable 5.2 one-shotted my nephew's dream game",
       "url": "https://notesbylex.com/fable-5-2-one-shotted-my-nephews-dream-game",
+      "source_id": "hn",
+      "source_name": "Hacker News (Front Page)",
       "snippet": "Article URL: https://notesbylex.com/fable-5-2-one-shotted-my-nephews-dream-game Comments URL: https://news.ycombinator.com/item?id=50433659 Points: 82 # Comments: 56",
       "published_at": "Mon, 09 Nov 2026 23:08:13 +0000",
-      "summary": "The article recounts how an AI tool, Fable 5.2, successfully created a fully functional video game based on a young boy's dream concept in a single attempt. It showcases how recent advances in generative AI are drastically reducing the effort needed to prototype and build software applications. This illustrates a major shift in how non-technical individuals can bring complex digital ideas to life.",
+      "summary": "The article recounts how the generative AI tool Fable 5.2 successfully built a complete, playable version of a child's dream video game from a single prompt. This milestone illustrates the dramatic speed at which AI tools are automating software generation and game development. It highlights how complex creative ideas can now be transformed into functional products almost instantaneously without manual coding.",
       "category": "AI",
       "key_points": [
-        "Fable 5.2 successfully generated a customized game from a single natural language request.",
-        "Generative AI capabilities are lowering the technical barriers to game development and rapid prototyping.",
-        " personalized software creation via AI is becoming accessible to non-engineers and children."
+        "Fable 5.2 generated a functional game end-to-end in a single prompt based on a nephew's concept.",
+        "Generative AI capabilities are expanding from simple code snippets to full application and game architecture.",
+        "The barrier to entry for game design and software creation is dropping rapidly for non-technical creators."
       ],
       "relevance_score": 9,
-      "processed_at": "2026-11-10T01:10:13.511Z"
+      "processed_at": "2026-11-10T01:17:15.272Z",
+      "model": "gemini-3.5-flash"
     },
     {
-      "source_id": "hn",
-      "source_name": "Hacker News (Front Page)",
-      "title": "Exact \u2013 a new cross platform UI framework by the Expo team",
-      "url": "https://github.com/expo/exact",
-      "snippet": "Article URL: https://github.com/expo/exact Comments URL: https://news.ycombinator.com/item?id=50433541 Points: 29 # Comments: 13",
-      "published_at": "Mon, 09 Nov 2026 22:59:13 +0000",
-      "summary": "The Expo team has launched Exact, a new cross-platform UI framework hosted on GitHub. The framework aims to simplify user interface development for applications targeting multiple operating systems. It is gaining early traction and discussion within the software developer community on Hacker News.",
-      "category": "Developer Tools",
-      "key_points": [
-        "Exact is a new cross-platform UI framework created by the Expo team.",
-        "The project is open-source and hosted publicly on GitHub.",
-        "It targets developers looking to build consistent user interfaces across platforms."
-      ],
-      "relevance_score": 7,
-      "processed_at": "2026-11-10T01:10:22.355Z"
-    },
-    {
-      "source_id": "techcrunch",
-      "source_name": "TechCrunch",
-      "title": "Hotel giant Wyndham exposed customer data after app security lapse",
-      "url": "https://techcrunch.com/2026/11/09/hotel-giant-wyndham-exposed-customer-data-after-app-security-lapse/",
-      "snippet": "Exclusive: Wyndham left a hardcoded credential in its customer app, allowing anyone to access customer data. The hotel giant wouldn't say if it has the ability to check for any past unauthorized access.",
-      "published_at": "Mon, 09 Nov 2026 23:03:46 +0000",
-      "summary": "Wyndham Hotels exposed sensitive customer data due to a hardcoded credential left inside its official customer mobile application. The security flaw allowed unauthorized access to private customer information. The hotel giant did not clarify whether it has the logging capabilities required to check for past unauthorized access.",
-      "category": "Security",
-      "key_points": [
-        "Wyndham left hardcoded credentials embedded within its customer mobile app.",
-        "The flaw potentially enabled anyone to exploit the credentials and access customer data.",
-        "The company declined to state if it can detect or audit past unauthorized access."
-      ],
-      "relevance_score": 6,
-      "processed_at": "2026-11-10T01:10:18.459Z"
-    },
-    {
-      "source_id": "hn",
-      "source_name": "Hacker News (Front Page)",
       "title": "Horible public key tricks",
       "url": "https://maurycyz.com/projects/badcert/",
+      "source_id": "hn",
+      "source_name": "Hacker News (Front Page)",
       "snippet": "Article URL: https://maurycyz.com/projects/badcert/ Comments URL: https://news.ycombinator.com/item?id=50434264 Points: 7 # Comments: 1",
       "published_at": "Tue, 10 Nov 2026 00:07:17 +0000",
-      "summary": "The article explores problematic implementations and edge cases in public key cryptography and digital certificates. It highlights potential security risks and unexpected behaviors resulting from non-standard key manipulation. The findings serve as a technical breakdown of cryptographic anti-patterns and parsing pitfalls.",
+      "summary": "This article explores unconventional and potentially dangerous techniques involving public key cryptography and digital certificates. It highlights how subtle manipulations of public key structures can bypass standard security assumptions. Understanding these edge cases is critical for developers and security engineers aiming to harden their systems against validation flaws.",
       "category": "Security",
       "key_points": [
-        "Examines unconventional and risky public key cryptographic tricks.",
-        "Highlights edge cases and potential vulnerabilities in digital certificate handling.",
-        "Provides insights into how flawed public key setups can undermine system security."
+        "Exploration of obscure public key and certificate manipulation tricks.",
+        "Potential security vulnerabilities resulting from unexpected cryptographic edge cases.",
+        "The importance of strict validation when implementing public key infrastructure."
       ],
-      "relevance_score": 4,
-      "processed_at": "2026-11-10T01:10:01.926Z"
+      "relevance_score": 5,
+      "processed_at": "2026-11-10T01:16:51.384Z",
+      "model": "gemini-3.5-flash"
     },
     {
-      "source_id": "techcrunch",
-      "source_name": "TechCrunch",
       "title": "Jensen Huang reportedly engaged a PR firm with a history of handling high-profile sex scandals a year ago",
       "url": "https://techcrunch.com/2026/11/09/jensen-huang-reportedly-engaged-a-pr-firm-with-a-history-of-handling-high-profile-sex-scandals-a-year-ago/",
+      "source_id": "techcrunch",
+      "source_name": "TechCrunch",
       "snippet": "The PR firm was enlisted shortly after an October 2025 New York Times report described Alice Huang's business dealings with Jensen Huang, Wired reported.",
       "published_at": "Mon, 09 Nov 2026 23:28:37 +0000",
-      "summary": "Nvidia CEO Jensen Huang reportedly hired a PR firm known for managing high-profile crisis situations and scandals approximately a year ago. The engagement followed an October 2025 New York Times report that detailed business dealings involving Alice Huang. The story was originally broken by Wired and covered by TechCrunch.",
+      "summary": "Nvidia CEO Jensen Huang reportedly hired a crisis PR firm known for managing high-profile personal scandals around a year ago. The decision followed an October 2025 media report examining business dealings related to Alice Huang. The engagement highlights the ongoing corporate governance and public relations strategies surrounding top tech executives.",
       "category": "Business",
       "key_points": [
-        "Jensen Huang reportedly retained a PR firm with a history of handling high-profile scandals.",
-        "The hiring occurred shortly after an October 2025 New York Times article about Alice Huang's business dealings with Jensen Huang.",
-        "The development focuses on executive public relations management rather than technical AI developments."
+        "Jensen Huang engaged a specialized crisis management PR firm roughly a year ago.",
+        "The hiring followed a New York Times report regarding Alice Huang's business dealings with Jensen Huang.",
+        "The revelation reflects heightened media scrutiny and strategic reputation management at the executive level."
       ],
       "relevance_score": 3,
-      "processed_at": "2026-11-10T01:10:07.078Z"
+      "processed_at": "2026-11-10T01:16:56.483Z",
+      "model": "gemini-3.5-flash"
     }
   ]
 }

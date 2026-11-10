@@ -18,7 +18,7 @@ Manual Trigger (or Schedule)
   Normalize + dedupe + cap items
         │
         ▼
-  Gemini analyze (structured JSON per item)
+  Gemini analyze via n8n Code node + helpers.httpRequest (structured JSON per item)
         │
         ▼
   Merge + sort by relevance
@@ -64,8 +64,16 @@ Then open `dashboard/index.html` in a browser (or `npm run dashboard`).
    npx n8n
    ```
 
-3. In n8n: **Workflows → Import from File** → choose `workflow/research-content-workflow.json`.
-4. Open the workflow → click **Test workflow** / **Execute**.
+3. Import via UI (**Workflows → Import from File**) or CLI:
+
+   ```bash
+   # CLI import needs a JSON array wrapper
+   python3 -c 'import json; json.dump([json.load(open("workflow/research-content-workflow.json"))], open("/tmp/wf.json","w"))'
+   n8n import:workflow --input=/tmp/wf.json
+   n8n execute --id=research-content-demo
+   ```
+
+4. Or open the workflow in the UI and click **Test workflow** / **Execute**.
 5. Optional: enable **Every 6 Hours** and disable **Manual Trigger** for scheduled runs.
 6. Optional swap-ins:
    - Enable **Google Sheets (swap-in)** after connecting Google credentials and setting the spreadsheet ID.
@@ -92,6 +100,25 @@ npm run pipeline    # fetch → Gemini → write output/ + sample-output/ + dash
 npm run dashboard   # serve dashboard on http://127.0.0.1:8765
 npm run n8n         # start local n8n (uses ./ .n8n data dir; not committed)
 ```
+
+
+## Verified in n8n
+
+This workflow was imported and executed with the n8n CLI (not only the standalone runner):
+
+```bash
+# Requires Node.js 18-22 and GEMINI_API_KEY in the environment
+export N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+export NODE_FUNCTION_ALLOW_BUILTIN=fs
+# Import expects a JSON array:
+n8n import:workflow --input=<(python3 -c 'import json;print(json.dumps([json.load(open("workflow/research-content-workflow.json"))]))')
+n8n execute --id=research-content-demo --rawOutput
+```
+
+- **n8n version:** 1.72.1
+- **Result:** execution completed successfully; Gemini returned structured rows; files written under `output/`, `sample-output/`, and `dashboard/data.json`
+- Sample output in this repo was refreshed from that n8n run (`executed_in: "n8n"` in the JSON)
+- Execution summary (no secrets): [`docs/n8n-cli-execution-proof.json`](docs/n8n-cli-execution-proof.json)
 
 ## Security
 

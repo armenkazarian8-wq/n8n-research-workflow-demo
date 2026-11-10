@@ -1,5 +1,7 @@
 {
+  "id": "research-content-demo",
   "name": "Research & Content Workflow Demo",
+  "active": false,
   "nodes": [
     {
       "parameters": {},
@@ -7,7 +9,10 @@
       "name": "Manual Trigger",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
-      "position": [0, 300]
+      "position": [
+        0,
+        300
+      ]
     },
     {
       "parameters": {
@@ -24,18 +29,25 @@
       "name": "Every 6 Hours",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
-      "position": [0, 480],
+      "position": [
+        0,
+        480
+      ],
       "disabled": true
     },
     {
       "parameters": {
-        "jsCode": "const sources = [\n  { id: 'hn', name: 'Hacker News (Front Page)', url: 'https://hnrss.org/frontpage' },\n  { id: 'techcrunch', name: 'TechCrunch', url: 'https://techcrunch.com/feed/' },\n  { id: 'bbc-tech', name: 'BBC Technology', url: 'https://www.thebbc-tech.com/rss/index.xml' },\n];\nreturn sources.map((s) => ({ json: s }));"
+        "jsCode": "const sources = [\n  { id: 'hn', name: 'Hacker News (Front Page)', url: 'https://hnrss.org/frontpage' },\n  { id: 'techcrunch', name: 'TechCrunch', url: 'https://techcrunch.com/feed/' },\n  { id: 'bbc-tech', name: 'BBC Technology', url: 'https://feeds.bbci.co.uk/news/technology/rss.xml' },\n];\nreturn sources.map((s) => ({ json: s }));",
+        "mode": "runOnceForAllItems"
       },
       "id": "list-sources",
       "name": "List Sources",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [240, 300]
+      "position": [
+        240,
+        300
+      ]
     },
     {
       "parameters": {
@@ -65,71 +77,53 @@
       "name": "Fetch RSS",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [480, 300],
+      "position": [
+        480,
+        300
+      ],
       "onError": "continueRegularOutput"
     },
     {
       "parameters": {
-        "jsCode": "function decodeXml(s) {\n  return String(s || '')\n    .replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, '$1')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&amp;/g, '&')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nconst out = [];\nfor (const item of items) {\n  const source = item.json;\n  // HTTP Request may put body in different shapes\n  let xml = '';\n  if (typeof item.json === 'string') xml = item.json;\n  else if (item.json.data) xml = typeof item.json.data === 'string' ? item.json.data : String(item.json.data);\n  else if (item.json.body) xml = String(item.json.body);\n  else {\n    // paired item: source fields + response\n    const keys = Object.keys(item.json);\n    for (const k of keys) {\n      if (typeof item.json[k] === 'string' && item.json[k].includes('<rss')) {\n        xml = item.json[k];\n        break;\n      }\n    }\n  }\n\n  // Prefer pairedItem source metadata from previous node via $input\n}\n\n// Better: use paired items from List Sources + Fetch RSS via $input.all()\nconst sourceItems = $('List Sources').all();\nconst fetchItems = $input.all();\nconst results = [];\n\nfor (let i = 0; i < fetchItems.length; i++) {\n  const source = sourceItems[i] ? sourceItems[i].json : { id: 'unknown', name: 'Unknown', url: '' };\n  let xml = fetchItems[i].json;\n  if (typeof xml !== 'string') {\n    if (xml && typeof xml.data === 'string') xml = xml.data;\n    else if (xml && typeof xml.body === 'string') xml = xml.body;\n    else xml = JSON.stringify(xml);\n  }\n  if (!xml || !xml.includes('<item')) continue;\n\n  const itemRe = /<item[\\s\\S]*?<\\/item>/gi;\n  let match;\n  let count = 0;\n  while ((match = itemRe.exec(xml)) !== null && count < 8) {\n    const block = match[0];\n    const title = decodeXml((block.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i) || [])[1] || '');\n    const link = decodeXml((block.match(/<link[^>]*>([\\s\\S]*?)<\\/link>/i) || [])[1] || '');\n    const description = decodeXml(\n      (block.match(/<description[^>]*>([\\s\\S]*?)<\\/description>/i) || [])[1] || ''\n    );\n    const pubDate = decodeXml((block.match(/<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>/i) || [])[1] || '');\n    if (!title || !link) continue;\n    results.push({\n      json: {\n        source_id: source.id,\n        source_name: source.name,\n        title,\n        url: link,\n        snippet: description.slice(0, 500),\n        published_at: pubDate || null,\n      },\n    });\n    count += 1;\n  }\n}\n\n// Dedupe by URL hostname+path\nconst seen = new Set();\nconst unique = [];\nfor (const row of results) {\n  let key;\n  try {\n    const u = new URL(row.json.url);\n    key = (u.hostname + u.pathname).toLowerCase().replace(/\\/$/, '');\n  } catch {\n    key = row.json.title.toLowerCase();\n  }\n  if (seen.has(key)) continue;\n  seen.add(key);\n  unique.push(row);\n}\n\n// Cap at 8 items, round-robin by source\nconst bySource = {};\nfor (const row of unique) {\n  const id = row.json.source_id;\n  bySource[id] = bySource[id] || [];\n  bySource[id].push(row);\n}\nconst selected = [];\nconst ids = Object.keys(bySource);\nlet i = 0;\nwhile (selected.length < 8 && ids.some((id) => bySource[id].length)) {\n  const id = ids[i % ids.length];\n  if (bySource[id].length) selected.push(bySource[id].shift());\n  i += 1;\n}\nreturn selected;"
+        "jsCode": "function decodeXml(s) {\n  return String(s || '')\n    .replace(/<!\\[CDATA\\[([\\s\\S]*?)\\]\\]>/g, '$1')\n    .replace(/&lt;/g, '<')\n    .replace(/&gt;/g, '>')\n    .replace(/&amp;/g, '&')\n    .replace(/&quot;/g, '\"')\n    .replace(/&#39;/g, \"'\")\n    .replace(/&#8217;/g, \"'\")\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/\\s+/g, ' ')\n    .trim();\n}\n\nconst sourceItems = $('List Sources').all();\nconst fetchItems = $input.all();\nconst results = [];\n\nfor (let i = 0; i < fetchItems.length; i++) {\n  const source = sourceItems[i] ? sourceItems[i].json : { id: 'unknown', name: 'Unknown', url: '' };\n  let xml = fetchItems[i].json;\n  if (typeof xml !== 'string') {\n    if (xml && typeof xml.data === 'string') xml = xml.data;\n    else if (xml && typeof xml.body === 'string') xml = xml.body;\n    else xml = JSON.stringify(xml);\n  }\n  if (!xml || (!xml.includes('<item') && !xml.includes('<entry'))) continue;\n\n  let match;\n  const itemRe = /<item[\\s\\S]*?<\\/item>/gi;\n  let count = 0;\n  while ((match = itemRe.exec(xml)) !== null && count < 8) {\n    const block = match[0];\n    const title = decodeXml((block.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i) || [])[1] || '');\n    const link = decodeXml((block.match(/<link[^>]*>([\\s\\S]*?)<\\/link>/i) || [])[1] || '');\n    const description = decodeXml((block.match(/<description[^>]*>([\\s\\S]*?)<\\/description>/i) || [])[1] || '');\n    const pubDate = decodeXml((block.match(/<pubDate[^>]*>([\\s\\S]*?)<\\/pubDate>/i) || [])[1] || '');\n    if (!title || !link) continue;\n    results.push({ json: { source_id: source.id, source_name: source.name, title, url: link, snippet: description.slice(0, 500), published_at: pubDate || null } });\n    count += 1;\n  }\n\n  if (count === 0) {\n    const entryRe = /<entry[\\s\\S]*?<\\/entry>/gi;\n    while ((match = entryRe.exec(xml)) !== null && count < 8) {\n      const block = match[0];\n      const title = decodeXml((block.match(/<title[^>]*>([\\s\\S]*?)<\\/title>/i) || [])[1] || '');\n      let link = '';\n      const linkHref = block.match(/<link[^>]*href=[\"']([^\"']+)[\"'][^>]*>/i);\n      if (linkHref) link = linkHref[1];\n      else link = decodeXml((block.match(/<link[^>]*>([\\s\\S]*?)<\\/link>/i) || [])[1] || '');\n      const description = decodeXml((block.match(/<summary[^>]*>([\\s\\S]*?)<\\/summary>/i) || [])[1] || (block.match(/<content[^>]*>([\\s\\S]*?)<\\/content>/i) || [])[1] || '');\n      const pubDate = decodeXml((block.match(/<updated[^>]*>([\\s\\S]*?)<\\/updated>/i) || [])[1] || (block.match(/<published[^>]*>([\\s\\S]*?)<\\/published>/i) || [])[1] || '');\n      if (!title || !link) continue;\n      results.push({ json: { source_id: source.id, source_name: source.name, title, url: link, snippet: description.slice(0, 500), published_at: pubDate || null } });\n      count += 1;\n    }\n  }\n}\n\nconst seen = new Set();\nconst unique = [];\nfor (const row of results) {\n  let key;\n  try {\n    const u = new URL(row.json.url);\n    key = (u.hostname + u.pathname).toLowerCase().replace(/\\/$/, '');\n  } catch {\n    key = row.json.title.toLowerCase();\n  }\n  if (seen.has(key)) continue;\n  seen.add(key);\n  unique.push(row);\n}\n\nconst bySource = {};\nfor (const row of unique) {\n  const id = row.json.source_id;\n  bySource[id] = bySource[id] || [];\n  bySource[id].push(row);\n}\nconst selected = [];\nconst ids = Object.keys(bySource);\nlet i = 0;\nwhile (selected.length < 6 && ids.some((id) => bySource[id].length)) {\n  const id = ids[i % ids.length];\n  if (bySource[id].length) selected.push(bySource[id].shift());\n  i += 1;\n}\nreturn selected;",
+        "mode": "runOnceForAllItems"
       },
       "id": "normalize-dedupe",
       "name": "Normalize & Dedupe",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [720, 300]
+      "position": [
+        720,
+        300
+      ]
     },
     {
       "parameters": {
-        "method": "POST",
-        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key={{ $env.GEMINI_API_KEY }}",
-        "sendBody": true,
-        "specifyBody": "json",
-        "jsonBody": "={\n  \"contents\": [{\n    \"role\": \"user\",\n    \"parts\": [{\n      \"text\": \"You are a research analyst for a content workflow.\\nAnalyze the article below and return ONLY valid JSON (no markdown fences) with this exact shape:\\n{\\n  \\\"summary\\\": \\\"2-3 sentence summary\\\",\\n  \\\"category\\\": \\\"one of: AI, Startups, Security, Developer Tools, Business, Science, Other\\\",\\n  \\\"key_points\\\": [\\\"point1\\\", \\\"point2\\\", \\\"point3\\\"],\\n  \\\"relevance_score\\\": 1-10 integer (10 = highly relevant to AI/automation/product builders)\\n}\\n\\nTitle: \" + $json.title + \"\\nSource: \" + $json.source_name + \"\\nURL: \" + $json.url + \"\\nSnippet: \" + $json.snippet\n    }]\n  }],\n  \"generationConfig\": {\n    \"temperature\": 0.2,\n    \"responseMimeType\": \"application/json\"\n  }\n}",
-        "options": {
-          "timeout": 45000
-        }
+        "jsCode": "const items = $input.all();\nconst apiKey = $env.GEMINI_API_KEY;\nif (!apiKey) {\n  throw new Error('GEMINI_API_KEY is not available in the n8n environment');\n}\n\nconst model = 'gemini-3.5-flash';\nconst out = [];\nlet lastError = null;\n\nfor (let idx = 0; idx < items.length; idx++) {\n  const entry = items[idx];\n  if (idx > 0) {\n    await new Promise((r) => setTimeout(r, 3000));\n  }\n  const item = entry.json;\n  const prompt = `You are a research analyst for a content workflow.\nAnalyze the article below and return ONLY valid JSON (no markdown fences) with this exact shape:\n{\n  \"summary\": \"2-3 sentence summary\",\n  \"category\": \"one of: AI, Startups, Security, Developer Tools, Business, Science, Other\",\n  \"key_points\": [\"point1\", \"point2\", \"point3\"],\n  \"relevance_score\": 1-10 integer (10 = highly relevant to AI/automation/product builders)\n}\n\nTitle: ${item.title}\nSource: ${item.source_name}\nURL: ${item.url}\nSnippet: ${item.snippet}`;\n\n  const body = {\n    contents: [{ role: 'user', parts: [{ text: prompt }] }],\n    generationConfig: { temperature: 0.2, responseMimeType: 'application/json' },\n  };\n\n  let analysis = null;\n  for (let attempt = 0; attempt < 4; attempt++) {\n    try {\n      const response = await this.helpers.httpRequest({\n        method: 'POST',\n        url: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,\n        headers: { 'Content-Type': 'application/json' },\n        body,\n        json: true,\n        timeout: 90000,\n      });\n      const text = (response.candidates && response.candidates[0] && response.candidates[0].content && response.candidates[0].content.parts)\n        ? response.candidates[0].content.parts.map((p) => p.text || '').join('')\n        : '';\n      try {\n        analysis = JSON.parse(text);\n      } catch (e) {\n        const m = String(text).match(/\\{[\\s\\S]*\\}/);\n        if (!m) throw new Error('Gemini returned non-JSON');\n        analysis = JSON.parse(m[0]);\n      }\n      break;\n    } catch (err) {\n      lastError = err;\n      const msg = String(err.message || err);\n      if (!/timeout|503|UNAVAILABLE|429|ECONNRESET|socket/i.test(msg) || attempt === 3) break;\n      await new Promise((r) => setTimeout(r, 2000 * (attempt + 1)));\n    }\n  }\n\n  if (!analysis) {\n    // Skip failed items but keep going\n    continue;\n  }\n\n  const score = Math.max(1, Math.min(10, Number(analysis.relevance_score) || 5));\n  out.push({\n    json: {\n      title: item.title,\n      url: item.url,\n      source_id: item.source_id,\n      source_name: item.source_name,\n      snippet: item.snippet,\n      published_at: item.published_at,\n      summary: String(analysis.summary || '').trim(),\n      category: String(analysis.category || 'Other').trim(),\n      key_points: Array.isArray(analysis.key_points) ? analysis.key_points.map(String).slice(0, 5) : [],\n      relevance_score: score,\n      processed_at: new Date().toISOString(),\n      model,\n    },\n  });\n}\n\nif (!out.length) {\n  throw new Error(`Gemini analyze produced 0 rows. Last error: ${lastError && lastError.message ? lastError.message : lastError}`);\n}\nreturn out;",
+        "mode": "runOnceForAllItems"
       },
       "id": "gemini-analyze",
       "name": "Gemini Analyze",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.2,
-      "position": [960, 300],
-      "onError": "continueRegularOutput"
-    },
-    {
-      "parameters": {
-        "jsCode": "const sourceItems = $('Normalize & Dedupe').all();\nconst aiItems = $input.all();\nconst out = [];\n\nfor (let i = 0; i < aiItems.length; i++) {\n  const base = sourceItems[i] ? sourceItems[i].json : {};\n  const ai = aiItems[i].json;\n  let analysis = null;\n  try {\n    const text = (ai.candidates && ai.candidates[0] && ai.candidates[0].content && ai.candidates[0].content.parts)\n      ? ai.candidates[0].content.parts.map(p => p.text || '').join('')\n      : '';\n    analysis = JSON.parse(text);\n  } catch (e) {\n    try {\n      const raw = JSON.stringify(ai);\n      const m = raw.match(/\\{[\\s\\S]*\\}/);\n      if (m) analysis = JSON.parse(m[0]);\n    } catch (_) {}\n  }\n  if (!analysis) continue;\n  const score = Math.max(1, Math.min(10, Number(analysis.relevance_score) || 5));\n  out.push({\n    json: {\n      title: base.title,\n      url: base.url,\n      source_id: base.source_id,\n      source_name: base.source_name,\n      snippet: base.snippet,\n      published_at: base.published_at,\n      summary: String(analysis.summary || '').trim(),\n      category: String(analysis.category || 'Other').trim(),\n      key_points: Array.isArray(analysis.key_points) ? analysis.key_points.map(String).slice(0, 5) : [],\n      relevance_score: score,\n      processed_at: new Date().toISOString(),\n    },\n  });\n}\n\nout.sort((a, b) => b.json.relevance_score - a.json.relevance_score);\nreturn out;"
-      },
-      "id": "merge-analysis",
-      "name": "Merge Analysis",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1200, 300]
+      "position": [
+        960,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "const rows = $input.all().map(i => i.json);\nconst payload = {\n  generated_at: new Date().toISOString(),\n  workflow: 'research-content-workflow-demo',\n  model: 'gemini-3.5-flash',\n  item_count: rows.length,\n  items: rows,\n};\nconst jsonText = JSON.stringify(payload, null, 2);\n\nfunction toCsv(rows) {\n  const headers = ['title','url','source_name','category','relevance_score','summary','key_points','published_at','processed_at'];\n  const esc = (v) => {\n    const s = String(v ?? '');\n    if (/[\",\\n]/.test(s)) return '\"' + s.replace(/\"/g, '\"\"') + '\"';\n    return s;\n  };\n  const lines = [headers.join(',')];\n  for (const r of rows) {\n    lines.push([\n      r.title, r.url, r.source_name, r.category, r.relevance_score, r.summary,\n      (r.key_points || []).join(' | '), r.published_at, r.processed_at\n    ].map(esc).join(','));\n  }\n  return lines.join('\\n') + '\\n';\n}\n\nreturn [\n  {\n    json: payload,\n    binary: {\n      research_json: {\n        data: Buffer.from(jsonText, 'utf8').toString('base64'),\n        mimeType: 'application/json',\n        fileName: 'research-results.json',\n      },\n      research_csv: {\n        data: Buffer.from(toCsv(rows), 'utf8').toString('base64'),\n        mimeType: 'text/csv',\n        fileName: 'research-results.csv',\n      },\n    },\n  },\n];"
+        "jsCode": "const rows = $input.all().map((i) => i.json);\nrows.sort((a, b) => b.relevance_score - a.relevance_score || String(a.title).localeCompare(String(b.title)));\nconst payload = {\n  generated_at: new Date().toISOString(),\n  workflow: 'research-content-workflow-demo',\n  executed_in: 'n8n',\n  model: rows[0] && rows[0].model ? rows[0].model : 'gemini-3.5-flash',\n  item_count: rows.length,\n  items: rows,\n};\nconst jsonText = JSON.stringify(payload, null, 2);\n\nfunction toCsv(rows) {\n  const headers = ['title','url','source_name','category','relevance_score','summary','key_points','published_at','processed_at'];\n  const esc = (v) => {\n    const s = String(v ?? '');\n    if (/[\",\\n]/.test(s)) return '\"' + s.replace(/\"/g, '\"\"') + '\"';\n    return s;\n  };\n  const lines = [headers.join(',')];\n  for (const r of rows) {\n    lines.push([\n      r.title, r.url, r.source_name, r.category, r.relevance_score, r.summary,\n      (r.key_points || []).join(' | '), r.published_at, r.processed_at\n    ].map(esc).join(','));\n  }\n  return lines.join('\\n') + '\\n';\n}\n\nconst csvText = toCsv(rows);\nconst fs = require('fs');\nconst outDir = '/workspace/n8n-research-demo/output';\nconst sampleDir = '/workspace/n8n-research-demo/sample-output';\nconst dashDir = '/workspace/n8n-research-demo/dashboard';\nfs.mkdirSync(outDir, { recursive: true });\nfs.mkdirSync(sampleDir, { recursive: true });\nfs.mkdirSync(dashDir, { recursive: true });\nfs.writeFileSync(`${outDir}/research-results.json`, jsonText);\nfs.writeFileSync(`${outDir}/research-results.csv`, csvText);\nfs.writeFileSync(`${sampleDir}/research-results.json`, jsonText);\nfs.writeFileSync(`${sampleDir}/research-results.csv`, csvText);\nfs.writeFileSync(`${dashDir}/data.json`, jsonText);\nfs.writeFileSync('/tmp/n8n-research-output.json', jsonText);\n\nreturn [{ json: { ...payload, files_written: [\n  `${outDir}/research-results.json`,\n  `${outDir}/research-results.csv`,\n  `${sampleDir}/research-results.json`,\n  `${dashDir}/data.json`,\n] } }];",
+        "mode": "runOnceForAllItems"
       },
       "id": "build-files",
       "name": "Build JSON & CSV",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [1440, 300]
-    },
-    {
-      "parameters": {
-        "operation": "write",
-        "fileName": "=/home/node/.n8n-files/research-results.json",
-        "dataPropertyName": "research_json",
-        "options": {}
-      },
-      "id": "write-json-file",
-      "name": "Write JSON File",
-      "type": "n8n-nodes-base.readWriteFile",
-      "typeVersion": 1,
-      "position": [1680, 220],
-      "disabled": true,
-      "notes": "Enable and set a path writable by your n8n process. The standalone runner writes to ./output by default."
+      "position": [
+        1200,
+        300
+      ]
     },
     {
       "parameters": {
@@ -154,9 +148,12 @@
       "name": "Google Sheets (swap-in)",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [1680, 400],
+      "position": [
+        1440,
+        180
+      ],
       "disabled": true,
-      "notes": "Disabled by default. Connect Google Sheets credentials, set document ID, then enable. Feed items from Merge Analysis instead of Build JSON & CSV if preferred."
+      "notes": "Disabled and unconnected by default. To use: enable the node, add credentials, set IDs, then connect it from Gemini Analyze (in parallel with Build JSON & CSV)."
     },
     {
       "parameters": {
@@ -181,9 +178,12 @@
       "name": "Airtable (swap-in)",
       "type": "n8n-nodes-base.airtable",
       "typeVersion": 2.1,
-      "position": [1680, 560],
+      "position": [
+        1440,
+        360
+      ],
       "disabled": true,
-      "notes": "Disabled by default. Connect Airtable credentials, set base/table IDs, then enable."
+      "notes": "Disabled and unconnected by default. To use: enable the node, add credentials, set IDs, then connect it from Gemini Analyze (in parallel with Build JSON & CSV)."
     }
   ],
   "connections": {
@@ -246,39 +246,7 @@
       "main": [
         [
           {
-            "node": "Merge Analysis",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Merge Analysis": {
-      "main": [
-        [
-          {
             "node": "Build JSON & CSV",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Google Sheets (swap-in)",
-            "type": "main",
-            "index": 0
-          },
-          {
-            "node": "Airtable (swap-in)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Build JSON & CSV": {
-      "main": [
-        [
-          {
-            "node": "Write JSON File",
             "type": "main",
             "index": 0
           }
@@ -294,12 +262,5 @@
     "templateCredsSetupCompleted": false
   },
   "pinData": {},
-  "tags": [
-    {
-      "name": "demo"
-    },
-    {
-      "name": "research"
-    }
-  ]
+  "tags": []
 }

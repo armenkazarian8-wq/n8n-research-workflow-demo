@@ -1,0 +1,62 @@
+{
+  "n8n_version": "1.72.1",
+  "command": "n8n execute --id=research-content-demo --rawOutput",
+  "lastNodeExecuted": "Airtable (swap-in)",
+  "nodes": {
+    "Manual Trigger": {
+      "executionStatus": "success",
+      "executionTime_ms": 0
+    },
+    "List Sources": {
+      "executionStatus": "success",
+      "executionTime_ms": 21
+    },
+    "Fetch RSS": {
+      "executionStatus": "success",
+      "executionTime_ms": 897
+    },
+    "Normalize & Dedupe": {
+      "executionStatus": "success",
+      "executionTime_ms": 15
+    },
+    "Gemini Analyze": {
+      "executionStatus": "success",
+      "executionTime_ms": 57392
+    },
+    "Google Sheets (swap-in)": {
+      "executionStatus": "success",
+      "executionTime_ms": 0
+    },
+    "Build JSON & CSV": {
+      "executionStatus": "success",
+      "executionTime_ms": 9
+    },
+    "Airtable (swap-in)": {
+      "executionStatus": "success",
+      "executionTime_ms": 0
+    }
+  },
+  "output": {
+    "item_count": 3,
+    "executed_in": "n8n",
+    "generated_at": "2026-11-10T01:17:40.612Z",
+    "model": "gemini-3.5-flash",
+    "titles": [
+      {
+        "title": "Fable 5.2 one-shotted my nephew's dream game",
+        "category": "AI",
+        "relevance_score": 9
+      },
+      {
+        "title": "Horible public key tricks",
+        "category": "Security",
+        "relevance_score": 5
+      },
+      {
+        "title": "Jensen Huang reportedly engaged a PR firm with a history of handling high-profile sex scandals a year ago",
+        "category": "Business",
+        "relevance_score": 3
+      }
+    ]
+  }
+}
